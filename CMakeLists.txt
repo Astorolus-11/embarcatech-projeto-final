@@ -35,7 +35,8 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(projeto_final projeto_final.c )
+add_executable(projeto_final projeto_final.c ssd1306.c)
+pico_generate_pio_header(projeto_final ${CMAKE_CURRENT_LIST_DIR}/matriz_leds.pio)
 
 pico_set_program_name(projeto_final "projeto_final")
 pico_set_program_version(projeto_final "0.1")
@@ -48,6 +49,9 @@ pico_enable_stdio_usb(projeto_final 1)
 target_link_libraries(projeto_final
         hardware_pwm
         hardware_adc
+        hardware_clocks
+        hardware_pio
+        hardware_i2c
         pico_time
         pico_stdlib)
 
