@@ -93,8 +93,6 @@ double estados_reservatorio [5][25] = {
          0.3, 0.2, 0.2, 0.2, 0.3,
          0.3, 0.2, 0.2, 0.2, 0.3,
          0.3, 0.3, 0.3, 0.3, 0.3}
-
-
 };
 
 int main()
@@ -117,8 +115,6 @@ int main()
     gpio_set_irq_enabled_with_callback(botao_joy,GPIO_IRQ_EDGE_FALL,true,&gpio_irq_handler);
     //------------------------------------------------------------------------------------------------------------------------------------
 
-
-
     while (true) {
 
         if(estado_motor){//Rotina se a bomba estiver ligada
@@ -131,7 +127,6 @@ int main()
             pwm_set_gpio_level(buzzer_a,20);
             pwm_set_gpio_level(buzzer_b,20);
 
-            
             last_time_main=tempo_atual_main;//Atualiza o last_time_main
             
             }
@@ -155,20 +150,15 @@ int main()
 
                 atualizar_reservatorio(valor_x,valor_y);
                 
-            
             }
-            
-
+        
         
         }
         
-        
-        printf("Reservatório = %d\n",reservatorio);
         estado_reservatorio_led_rgb();
         estado_reservatorio_matriz();
         display_status();
-        
-
+    
         sleep_ms(100);
         
     }
@@ -325,9 +315,11 @@ void atualizar_reservatorio(uint16_t x, uint16_t y){
         taxa=preencher_reservatorio;
 
         if(reservatorio==nivel_max_reservatorio){
-            printf("Reservatório cheio.\n");
+            
             pwm_set_gpio_level(buzzer_a,0);
             pwm_set_gpio_level(buzzer_b,0);
+            taxa=0;
+            estado_motor_joy = false;
         }
         else{
             reservatorio+=preencher_reservatorio;
@@ -336,6 +328,8 @@ void atualizar_reservatorio(uint16_t x, uint16_t y){
 
             if(reservatorio>=nivel_max_reservatorio){//Se ultrapassar o valor máximo
                 reservatorio=nivel_max_reservatorio;
+                taxa=0;
+                estado_motor_joy = false;
             }
         }
 
@@ -346,9 +340,10 @@ void atualizar_reservatorio(uint16_t x, uint16_t y){
         estado_motor_joy = false;
         taxa=preencher_reservatorio;
         if(reservatorio==nivel_min_reservatorio){
-            printf("Reservatório vazio.\n");
             pwm_set_gpio_level(buzzer_a,0);
             pwm_set_gpio_level(buzzer_b,0);
+            estado_motor_joy = false;
+            taxa=0;
         }
         else{
             reservatorio-=preencher_reservatorio;
@@ -357,6 +352,8 @@ void atualizar_reservatorio(uint16_t x, uint16_t y){
 
             if(reservatorio<=nivel_min_reservatorio){//Se ultrapassar do valor mínimo
                 reservatorio=nivel_min_reservatorio;
+                taxa=0;
+                estado_motor_joy = false;
 
             }
            
@@ -417,8 +414,6 @@ void estado_reservatorio_matriz(){
             pio_sm_put_blocking(pio,sm,valor_led);
             
         }
-
-
     }
 
     else if(reservatorio>=nivel_max_reservatorio/4 && reservatorio<4900){// Entre 25% e 49%
@@ -533,12 +528,10 @@ void i2c_setup(){
     ssd1306_init(&ssd, WIDTH, HEIGHT, false, endereco,i2c_port);
     ssd1306_config(&ssd);
     ssd1306_send_data(&ssd);
-
-
-
 }
+
 void display_status(){
-    uint8_t porcentagem = (reservatorio/nivel_max_reservatorio)*100;
+    double porcentagem = reservatorio*59/10000; //Converte a porcentagem do reservatório para que a cada 1% preencha um pixel de 59
     //Estrutura:
     ssd1306_fill(&ssd,false); //Atualiza o display
     ssd1306_rect(&ssd,0,0,127,63,true,false); //Borda
@@ -586,19 +579,19 @@ void display_status(){
     ssd1306_draw_string(&ssd, "L",72,43);
     ssd1306_draw_string(&ssd,"s",78,51);
 
-    
     for(int i=83,j=48;i>73,j<58;i--,j++){ //Constroi a barra de divisão (/)
         ssd1306_pixel(&ssd,i,j,true);
     }
+
+    //Status reservatório display:
+    uint8_t eixoy=60; //Eixo vai de 60 a 1
+
+    for(int i=0;i<porcentagem;i++){
+        ssd1306_hline(&ssd,92,124,eixoy,true);
+        eixoy--;
+        
+    }
     
-    
-    
-
-    
-
-
-
-
     ssd1306_send_data(&ssd);
 
 }
