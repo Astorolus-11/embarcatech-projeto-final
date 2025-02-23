@@ -58,7 +58,7 @@ Os componentes utilizados presentes na placa foram:
   
   
 
-##  5. Como executar o projeto e simular:
+##  5. Como executar o projeto:
 
 
 1. Clonar o repositório: https://github.com/Astorolus-11/embarcatech-projeto-final
