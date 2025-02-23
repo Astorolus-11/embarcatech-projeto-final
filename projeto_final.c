@@ -70,25 +70,25 @@ double estados_reservatorio [5][25] = {
         0.1, 0.1, 0.1, 0.1, 0.1,
         0.1, 0.1, 0.1, 0.1, 0.1},
         
-        {0.3, 0.1, 0.1, 0.1, 0.3, //25% 0.3 branco, 0.1 vermelho, 0.2 verde
+        {0.3, 0.1, 0.1, 0.1, 0.3, //25% 
          0.3, 0.1, 0.1, 0.1, 0.3,
          0.3, 0.1, 0.1, 0.1, 0.3,
          0.3, 0.2, 0.2, 0.2, 0.3,
          0.3, 0.3, 0.3, 0.3, 0.3},
         
-        {0.3, 0.1, 0.1, 0.1, 0.3, //50% 0.3 branco, 0.1 vermelho, 0.2 verde
+        {0.3, 0.1, 0.1, 0.1, 0.3, //50% 
          0.3, 0.1, 0.1, 0.1, 0.3,
          0.3, 0.2, 0.2, 0.2, 0.3,
          0.3, 0.2, 0.2, 0.2, 0.3,
          0.3, 0.3, 0.3, 0.3, 0.3},
         
-        {0.3, 0.1, 0.1, 0.1, 0.3, //75% 0.3 branco, 0.1 vermelho, 0.2 verde
+        {0.3, 0.1, 0.1, 0.1, 0.3, //75% 
          0.3, 0.2, 0.2, 0.2, 0.3,
          0.3, 0.2, 0.2, 0.2, 0.3,
          0.3, 0.2, 0.2, 0.2, 0.3,
          0.3, 0.3, 0.3, 0.3, 0.3},
         
-        {0.3, 0.2, 0.2, 0.2, 0.3, //100% 0.3 branco, 0.2 verde
+        {0.3, 0.2, 0.2, 0.2, 0.3, //100%
          0.3, 0.2, 0.2, 0.2, 0.3,
          0.3, 0.2, 0.2, 0.2, 0.3,
          0.3, 0.2, 0.2, 0.2, 0.3,
@@ -425,7 +425,7 @@ void estado_reservatorio_matriz(){
                 
             }
             else if(i>5 && i<10){
-                valor_led = intensidade(estados_reservatorio[1][i],0.0,0.0); //Verde
+                valor_led = intensidade(0.0,0.0,estados_reservatorio[1][i]); //azul
 
             }
             else{
@@ -449,7 +449,7 @@ void estado_reservatorio_matriz(){
             }
         
             else if(i>5 && i<10 || i>10 && i<14){
-            valor_led = intensidade(estados_reservatorio[1][i],0.0,0.0); //Verde
+                valor_led = intensidade(0.0,0.0,estados_reservatorio[2][i]); //azul
 
             }
             else{
@@ -469,7 +469,7 @@ void estado_reservatorio_matriz(){
                 
             }
             else if(i>5 && i<10 || i>10 && i<14 || i>15 && i<19){
-                valor_led = intensidade(estados_reservatorio[1][i],0.0,0.0); //Verde
+                valor_led = intensidade(0.0,0.0,estados_reservatorio[3][i]); //azul
 
             }
             else{
@@ -489,7 +489,7 @@ void estado_reservatorio_matriz(){
                 
             }
             else{
-                valor_led = intensidade(estados_reservatorio[1][i],0.0,0.0); //Verde
+                valor_led = intensidade(0.0,0.0,estados_reservatorio[4][i]); //azul
 
             }
             pio_sm_put_blocking(pio, sm, valor_led);
