@@ -1,10 +1,10 @@
-# Projeto simulando um reservatório de água
+# Projeto simulando um reservatório de água de 10.000L
 
 
 ## 1. Propósito
 
 
-O propósito desse projeto é fazer uma pequena simulação de um reservátorio de água de 10.000L com um sistema de bomba que pode tanto encher o reservatório quanto esvaziar. Além disso demonstrar domínio na linguagem C,
+O propósito desse projeto é fazer uma pequena simulação de um reservátorio de água com um sistema de bomba que pode tanto encher o reservatório quanto esvaziar. Além disso demonstrar domínio na linguagem C,
 em manipulação de ADC, PWM, comunicação serial, tratamento de interrupções e bounce dos botões e temporização.
 
 
