@@ -47,12 +47,12 @@ const float divisor = 125.0;
 static volatile uint32_t last_time = 0;
 const uint16_t nivel_max_reservatorio = 10000, nivel_min_reservatorio = 0, nivel_max_incremento = 600;//Simulando um reservatório de 10000 L
 static int16_t reservatorio = 0;
-static int16_t incremento = 1000, incremento_2 = 500; 
+static int16_t incremento = 1000, incremento_2 = 500, taxa; 
 static bool estado_motor = false, estado_motor_joy = false;
 const uint pixels = 25;
 ssd1306_t ssd;
 static bool sentido_motor = true;
-static uint16_t taxa;
+
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 //PIO:--------------------------------------------------------------------------------------------------------------------------------------
@@ -220,6 +220,7 @@ void gpio_irq_handler(uint gpio, uint32_t events){
 
             if(reservatorio<nivel_max_reservatorio){
                 reservatorio+=incremento;
+                taxa=incremento;
                 if(reservatorio>nivel_max_reservatorio) reservatorio=nivel_max_reservatorio; //Para caso se passar por causa do joystick
     
                 
@@ -236,6 +237,7 @@ void gpio_irq_handler(uint gpio, uint32_t events){
             
             if(reservatorio>nivel_min_reservatorio){
                 reservatorio-=incremento;
+                taxa=incremento;
                 if(reservatorio<0) reservatorio = nivel_min_reservatorio; //Tratamento se for negativo
                 
             }
@@ -277,6 +279,7 @@ void bomba(){
         sentido_motor = true;
         if(reservatorio<=nivel_max_reservatorio){//Atualiza o reservatório enquanto não estiver no nível máximo
             reservatorio+=incremento_2;
+            taxa=incremento_2;
             if(reservatorio>nivel_max_reservatorio){
                 reservatorio=nivel_max_reservatorio;
                 estado_motor=false;
@@ -313,10 +316,14 @@ void atualizar_reservatorio(uint16_t x, uint16_t y){
 
     int16_t preencher_reservatorio = (x*nivel_max_incremento)/4095;
     
+    
+    
 
     if(y>2500){//Se for pra cima enche o reservatório
         sentido_motor = true;
         estado_motor_joy = true;
+        taxa=preencher_reservatorio;
+
         if(reservatorio==nivel_max_reservatorio){
             printf("Reservatório cheio.\n");
             pwm_set_gpio_level(buzzer_a,0);
@@ -337,6 +344,7 @@ void atualizar_reservatorio(uint16_t x, uint16_t y){
     else if(y<1970){//Se for para baixo esvazia o reservatório
         sentido_motor = false;
         estado_motor_joy = false;
+        taxa=preencher_reservatorio;
         if(reservatorio==nivel_min_reservatorio){
             printf("Reservatório vazio.\n");
             pwm_set_gpio_level(buzzer_a,0);
@@ -356,6 +364,7 @@ void atualizar_reservatorio(uint16_t x, uint16_t y){
 
     }
     else{
+        taxa=0;
         estado_motor_joy = false;
     }
 
@@ -534,7 +543,7 @@ void display_status(){
     ssd1306_fill(&ssd,false); //Atualiza o display
     ssd1306_rect(&ssd,0,0,127,63,true,false); //Borda
     ssd1306_vline(&ssd,90,0,62,true); //Linha vertical 
-    ssd1306_hline(&ssd,1,126,10,true); //Linha horizontal
+    ssd1306_hline(&ssd,1,90,10,true); //Linha horizontal
     ssd1306_draw_string(&ssd, "STATUS", 22, 2);
 
     //STATUS MOTOR:
@@ -569,7 +578,24 @@ void display_status(){
     ssd1306_draw_string(&ssd, str, 39, 32);
     ssd1306_draw_string(&ssd,"L",80,32);
     
-    //Taxa d'água joystick
+    //Taxa d'água:
+    sprintf(str,"%d",taxa); 
+    ssd1306_hline(&ssd,1,90,41,true);
+    ssd1306_draw_string(&ssd, "TAXA", 2, 43);
+    ssd1306_draw_string(&ssd,str,39,43);
+    ssd1306_draw_string(&ssd, "L",72,43);
+    ssd1306_draw_string(&ssd,"s",78,51);
+
+    
+    for(int i=83,j=48;i>73,j<58;i--,j++){ //Constroi a barra de divisão (/)
+        ssd1306_pixel(&ssd,i,j,true);
+    }
+    
+    
+    
+
+    
+
 
 
 
