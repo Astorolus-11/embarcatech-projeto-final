@@ -55,7 +55,7 @@ Os componentes utilizados presentes na placa foram:
 - [CMake](https://marketplace.visualstudio.com/items?itemName=twxs.cmake);
 - [CMake Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools);
 - [Raspberry Pi Pico](https://marketplace.visualstudio.com/items?itemName=raspberry-pi.raspberry-pi-pico);
-- 
+  
   
 
 ##  5. Como executar o projeto e simular:
@@ -70,6 +70,11 @@ Os componentes utilizados presentes na placa foram:
 3. Para executar na placa clique em Run que está localizada no rodapé do vscode (A placa precisa já está conectada e com o BootSel ativado):
 
    ![image](https://github.com/user-attachments/assets/36b14dce-1309-4f0c-a7f3-3cd7edb2b336)
+
+
+## 6. Vídeo de demonstração
+
+
    
   
   # Pronto! já está tudo pronto para testar o projeto!
