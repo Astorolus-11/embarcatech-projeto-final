@@ -19,6 +19,11 @@ const uint botao_a = 5, botao_b = 6, botao_joy = 22; //Botões
 const uint buzzer_a = 10, buzzer_b = 21; //Buzzers
 const uint joy_x = 27, joy_y = 26; //Joystick
 const uint pin_matriz = 7; //Matriz de LEDs 5x5
+const uint i2c_sda = 14; //Entrada/Saida de dados i2c
+const uint i2c_scl = 15; //Sinal de clock i2c
+const uint endereco = 0x3C; //Endereço do display 
+#define i2c_port i2c1 //Interface 1 do i2c
+
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 //Protótipos das funções:-------------------------------------------------------------------------------------------------------------------
@@ -31,6 +36,8 @@ void atualizar_reservatorio(uint16_t x, uint16_t y); //Atualiza o reservatório 
 void estado_reservatorio_led_rgb(); //Mostra o estado do reservatório nos LEDs RGB
 void estado_reservatorio_matriz(); //Mostra o estado do reservatório na matriz de LEDs 5x5
 uint32_t intensidade(double g, double r, double b); //Configura a intensidade do brilho dos LEDs da matriz
+void i2c_setup();
+void display_status();
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 //Variáveis globais://----------------------------------------------------------------------------------------------------------------------
@@ -41,8 +48,11 @@ static volatile uint32_t last_time = 0;
 const uint16_t nivel_max_reservatorio = 10000, nivel_min_reservatorio = 0, nivel_max_incremento = 600;//Simulando um reservatório de 10000 L
 static int16_t reservatorio = 0;
 static int16_t incremento = 1000, incremento_2 = 500; 
-static bool estado_motor = false;
+static bool estado_motor = false, estado_motor_joy = false;
 const uint pixels = 25;
+ssd1306_t ssd;
+static bool sentido_motor = true;
+static uint16_t taxa;
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 //PIO:--------------------------------------------------------------------------------------------------------------------------------------
@@ -91,6 +101,7 @@ int main()
 {   pwm_setup();
     setup_botoes();
     adc_setup();
+    i2c_setup();
     stdio_init_all();
     //Configuração da PIO:----------------------------------------------------------------------------------------------------------------
     pio = pio0; 
@@ -148,10 +159,14 @@ int main()
             }
             
 
+        
         }
+        
+        
         printf("Reservatório = %d\n",reservatorio);
         estado_reservatorio_led_rgb();
         estado_reservatorio_matriz();
+        display_status();
         
 
         sleep_ms(100);
@@ -205,6 +220,9 @@ void gpio_irq_handler(uint gpio, uint32_t events){
 
             if(reservatorio<nivel_max_reservatorio){
                 reservatorio+=incremento;
+                if(reservatorio>nivel_max_reservatorio) reservatorio=nivel_max_reservatorio; //Para caso se passar por causa do joystick
+    
+                
 
             }
             else{
@@ -218,6 +236,7 @@ void gpio_irq_handler(uint gpio, uint32_t events){
             
             if(reservatorio>nivel_min_reservatorio){
                 reservatorio-=incremento;
+                if(reservatorio<0) reservatorio = nivel_min_reservatorio; //Tratamento se for negativo
                 
             }
             else{
@@ -255,9 +274,13 @@ void setup_botoes(){
 void bomba(){
 
     if(estado_motor==1){
-
-        if(reservatorio+incremento_2<=nivel_max_reservatorio){//Atualiza o reservatório enquanto não estiver no nível máximo
+        sentido_motor = true;
+        if(reservatorio<=nivel_max_reservatorio){//Atualiza o reservatório enquanto não estiver no nível máximo
             reservatorio+=incremento_2;
+            if(reservatorio>nivel_max_reservatorio){
+                reservatorio=nivel_max_reservatorio;
+                estado_motor=false;
+            } 
 
         }
         else{
@@ -292,11 +315,18 @@ void atualizar_reservatorio(uint16_t x, uint16_t y){
     
 
     if(y>2500){//Se for pra cima enche o reservatório
+        sentido_motor = true;
+        estado_motor_joy = true;
         if(reservatorio==nivel_max_reservatorio){
             printf("Reservatório cheio.\n");
+            pwm_set_gpio_level(buzzer_a,0);
+            pwm_set_gpio_level(buzzer_b,0);
         }
         else{
             reservatorio+=preencher_reservatorio;
+            pwm_set_gpio_level(buzzer_a,20);
+            pwm_set_gpio_level(buzzer_b,20);
+
             if(reservatorio>=nivel_max_reservatorio){//Se ultrapassar o valor máximo
                 reservatorio=nivel_max_reservatorio;
             }
@@ -305,19 +335,28 @@ void atualizar_reservatorio(uint16_t x, uint16_t y){
     }
 
     else if(y<1970){//Se for para baixo esvazia o reservatório
+        sentido_motor = false;
+        estado_motor_joy = false;
         if(reservatorio==nivel_min_reservatorio){
             printf("Reservatório vazio.\n");
+            pwm_set_gpio_level(buzzer_a,0);
+            pwm_set_gpio_level(buzzer_b,0);
         }
         else{
             reservatorio-=preencher_reservatorio;
-            
+            pwm_set_gpio_level(buzzer_a,20);
+            pwm_set_gpio_level(buzzer_b,20);
 
             if(reservatorio<=nivel_min_reservatorio){//Se ultrapassar do valor mínimo
                 reservatorio=nivel_min_reservatorio;
+
             }
            
         }
 
+    }
+    else{
+        estado_motor_joy = false;
     }
 
 }
@@ -467,4 +506,73 @@ uint32_t intensidade(double g, double r, double b){
     B = b*255;
 
     return (G<<24) | (R<<16) | (B<<8); //A cada 8 bits é uma cor de 32 bits, os primeiros 8 bits não contam
+}
+
+void i2c_setup(){
+
+    //Inicializa a interface i2c com 400KHz (para o display):
+    i2c_init(i2c_port, 400*1000);
+    //Habilita a função i2c nos pinos 14 e 15:
+    gpio_set_function(i2c_sda, GPIO_FUNC_I2C);
+    gpio_set_function(i2c_scl,GPIO_FUNC_I2C);
+    //Habilita o Pull-up:
+    gpio_pull_up(i2c_sda);
+    gpio_pull_up(i2c_scl);
+
+    //Configuração inicial do display:
+    //          display, comprimento, altura, vcc externo, endereço
+    ssd1306_init(&ssd, WIDTH, HEIGHT, false, endereco,i2c_port);
+    ssd1306_config(&ssd);
+    ssd1306_send_data(&ssd);
+
+
+
+}
+void display_status(){
+    uint8_t porcentagem = (reservatorio/nivel_max_reservatorio)*100;
+    //Estrutura:
+    ssd1306_fill(&ssd,false); //Atualiza o display
+    ssd1306_rect(&ssd,0,0,127,63,true,false); //Borda
+    ssd1306_vline(&ssd,90,0,62,true); //Linha vertical 
+    ssd1306_hline(&ssd,1,126,10,true); //Linha horizontal
+    ssd1306_draw_string(&ssd, "STATUS", 22, 2);
+
+    //STATUS MOTOR:
+    ssd1306_hline(&ssd,1,90,20,true);
+    ssd1306_draw_string(&ssd,"MOTOR",2,12);
+        if(estado_motor == true || estado_motor_joy == true){
+            ssd1306_draw_string(&ssd,"ON",65,12);
+        }
+        else{
+        
+             ssd1306_draw_string(&ssd,"OFF",65,12);
+
+        }
+
+    //Direção motor (enchendo ou esvaziando):
+    ssd1306_hline(&ssd,1,90,30,true);
+    ssd1306_draw_string(&ssd,"SENTIDO",2,22);
+        if(sentido_motor == 1){
+            //Sinal de +:
+            ssd1306_hline(&ssd,73,79,25,true);
+            ssd1306_vline(&ssd,76,22,28,true);
+        }
+        else{
+            //Sinal de -:
+             ssd1306_hline(&ssd,73,79,25,true);          
+        }
+    
+    //Quantidade de água:
+    char str[11];
+    sprintf(str,"%d",reservatorio); //Transforma um número em caractere
+    ssd1306_draw_string(&ssd, "AGUA", 2, 32);
+    ssd1306_draw_string(&ssd, str, 39, 32);
+    ssd1306_draw_string(&ssd,"L",80,32);
+    
+    //Taxa d'água joystick
+
+
+
+    ssd1306_send_data(&ssd);
+
 }
