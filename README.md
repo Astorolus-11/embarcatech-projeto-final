@@ -74,6 +74,7 @@ Os componentes utilizados presentes na placa foram:
 
 ## 6. Vídeo de demonstração
 
+https://www.dropbox.com/scl/fi/mc20hkrfqcfg29i5xmlf7/V-deo-de-demonstra-o-projeto-final-Feito-com-o-Clipchamp.mp4?rlkey=jku7drqencoil2ywch1y6qll3&st=2un8m4y4&dl=0
 
    
   
